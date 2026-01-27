@@ -39,7 +39,7 @@ from pipecat.processors.aggregators.llm_response_universal import (
     UserTurnStoppedMessage,
 )
 from pipecat.processors.frame_processor import FrameDirection
-from pipecat.processors.frameworks.rtvi import RTVIConfig, RTVIObserver, RTVIProcessor
+from pipecat.processors.frameworks.rtvi import RTVIObserver, RTVIProcessor
 from pipecat.runner.types import RunnerArguments
 from pipecat.runner.utils import create_transport
 from pipecat.services.google.gemini_live.llm import GeminiLiveLLMService, InputParams
@@ -152,7 +152,7 @@ Remember: Present the pre-written statements exactly as shown, keep your comment
     # Add RTVI to the pipeline to receive events for the SmallWebRTC Prebuilt UI
     # Only needed for client/server messaging and events
     # You can remove RTVI processors and observers for Twilio/phone use cases
-    rtvi = RTVIProcessor(config=RTVIConfig(config=[]))
+    rtvi = RTVIProcessor()
 
     pipeline = Pipeline(
         [
@@ -207,9 +207,9 @@ async def bot(runner_args: RunnerArguments):
     """Main bot entry point compatible with Pipecat Cloud."""
     # Krisp is available when deployed to Pipecat Cloud
     if os.environ.get("ENV") != "local":
-        from pipecat.audio.filters.krisp_filter import KrispFilter
+        from pipecat.audio.filters.krisp_viva_filter import KrispVivaFilter
 
-        krisp_filter = KrispFilter()
+        krisp_filter = KrispVivaFilter()
     else:
         krisp_filter = None
 
