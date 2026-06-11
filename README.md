@@ -1,8 +1,6 @@
-# Gemini Phone Bots
+# Voice Agent (Pipecat Phone Bot)
 
-A telephone-based conversational agent built with Pipecat, powered by Google's Gemini APIs and Twilio. This bot plays "Two Truths and a Lie". The bot will provide three statements and you have to guess which one is false.
-
-Learn how to run and deploy these bots on Pipecat Cloud.
+基于 Pipecat 的电话语音对话 Agent，当前 fork 自 [daily-co/pcc-gemini-twilio](https://github.com/daily-co/pcc-gemini-twilio)，LLM 已切换为 DashScope Qwen-Omni Realtime，业务逻辑仍在二次开发初期。
 
 ## Try it! 📞
 
@@ -19,9 +17,9 @@ Call **1-970-LIVE-API** (1-970-548-3274) to talk to a Gemini Live Pipecat bot ov
 
 You'll need API keys for the following services:
 
-- [Gemini](https://aistudio.google.com/) LLMs: Live API and Text completions
-- [Google STT & TTS](https://console.cloud.google.com) for Speech-to-Text and Text-to-Speech
+- [DashScope](https://dashscope.aliyun.com/) Qwen-Omni Realtime（当前主 LLM）
 - [Twilio](https://www.twilio.com/try-twilio) for phone calling
+- （可选）[Gemini](https://aistudio.google.com/) / Google STT & TTS：仅 `bot-cascade.py` 路径需要
 
 > 💡 **Tip**: Sign up these services. You'll need them for both local and cloud deployment.
 
@@ -30,8 +28,8 @@ You'll need API keys for the following services:
 1. Clone this repository
 
    ```bash
-   git clone https://github.com/daily-co/pcc-gemini-twilio.git
-   cd pcc-gemini-twilio
+   git clone https://github.com/lvfangdi/voice-agent.git
+   cd voice-agent
    ```
 
 2. Configure your API keys:
@@ -45,6 +43,7 @@ You'll need API keys for the following services:
    Then, add your API keys:
 
    ```ini
+   DASHSCOPE_API_KEY=
    GOOGLE_API_KEY=
    GOOGLE_CREDENTIALS_PATH=./credentials.json
    TWILIO_ACCOUNT_SID=

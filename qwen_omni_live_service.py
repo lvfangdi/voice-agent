@@ -470,6 +470,31 @@ class QwenOmniLiveLLMService(LLMService):
             logger.error("Function calls require a context object")
             return
 
+        # #region agent log
+        import json as _json_dbg
+        import time as _time_dbg
+        from pathlib import Path as _PathDbg
+
+        def _dbg_qwen(loc: str, msg: str, data: dict, hid: str) -> None:
+            _log_path = _PathDbg(__file__).resolve().parent / "debug-0e7ac3.log"
+            _log_path.open("a", encoding="utf-8").write(
+                _json_dbg.dumps(
+                    {
+                        "sessionId": "0e7ac3",
+                        "timestamp": int(_time_dbg.time() * 1000),
+                        "location": loc,
+                        "message": msg,
+                        "data": data,
+                        "hypothesisId": hid,
+                        "runId": "pre-fix",
+                    },
+                    ensure_ascii=False,
+                )
+                + "\n"
+            )
+
+        # #endregion
+
         function_name = response.get("name", "")
         call_id = response.get("call_id", "")
         try:
@@ -499,6 +524,14 @@ class QwenOmniLiveLLMService(LLMService):
             result_callback=result_callback,
         )
 
+        # #region agent log
+        _dbg_qwen(
+            "qwen:_handle_function_call:before_handler",
+            "invoking handler",
+            {"function_name": function_name},
+            "A",
+        )
+        # #endregion
         try:
             if item.handler_deprecated:
                 await item.handler(
@@ -515,8 +548,22 @@ class QwenOmniLiveLLMService(LLMService):
             logger.error(f"Error executing function '{function_name}': {e}")
             result_value = {"error": str(e)}
 
+        # #region agent log
+        _dbg_qwen(
+            "qwen:_handle_function_call:after_handler",
+            "handler returned",
+            {"function_name": function_name, "result_status": result_value.get("status")},
+            "A",
+        )
+        # #endregion
         await self._send_tool_result(call_id, json.dumps(result_value, ensure_ascii=False))
+        # #region agent log
+        _dbg_qwen("qwen:_handle_function_call:after_send_tool_result", "tool result sent", {}, "B")
+        # #endregion
         await self._create_response()
+        # #region agent log
+        _dbg_qwen("qwen:_handle_function_call:after_create_response", "create_response done", {}, "B")
+        # #endregion
 
     async def _send_tool_result(self, call_id: str, output: str):
         if not self._conversation or not self._connected:

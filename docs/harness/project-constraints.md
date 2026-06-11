@@ -61,6 +61,11 @@ Maintenance loop 默认扫描本文件，用来判断项目规则是否仍停留
 | `ARCH-001` | `architecture` | LLM 适配在 `qwen_omni_live_service.py`，bot 编排在 `bot.py` | `AGENTS.md` / 源码 | review | — | `documented` | `maintenance_candidate` | 备选入口 `bot-cascade.py` 仍保留 Gemini cascade |
 | `SECURITY-001` | `security` | `.env`、`credentials.json` 等凭据文件不得提交 | `.gitignore` / `env.example` | gitignore | — | `documented` | `maintenance_candidate` | 示例配置用 `env.example` |
 | `VERIFY-001` | `verification` | 尚无自动化测试；本地验证为手动 WebRTC 连接 | `README.md` | manual | `uv run bot.py` + 浏览器 Connect | `documented` | `rule_promotion_candidate` | lint 可用 `uv run ruff check .`，未接入 harness gate |
+| `ARCH-002` | `architecture` | 园区业务逻辑不得侵入 `qwen_omni_live_service.py` 协议层 | `AGENTS.md` / ExecPlan | review | — | `documented` | `maintenance_candidate` | 业务放 `visitor_registration.py` |
+| `ARCH-003` | `architecture` | 访客登记业务集中在 `visitor_registration.py`；`bot.py` 仅做装配 | `AGENTS.md` / ExecPlan | review | — | `documented` | `maintenance_candidate` | 完全替换 `game_content.py` 主流程 |
+| `RUNTIME-004` | `runtime` | 企微 webhook URL 从 `.env` 的 `WECOM_WEBHOOK_URL` 读取，不得硬编码 | `env.example` / VA-004 | manual | — | `documented` | `maintenance_candidate` | MVP 唯一数据出口 |
+| `VERIFY-002` | `verification` | MVP 验收 = WebRTC 全链路 + 25s 硬性 gate + 自然对话样例 | `docs/test/visitor-registration-mvp-runbook.md` | manual | runbook 主路径 ×3 | `documented` | `rule_promotion_candidate` | 起点 Agent 首句，终点 webhook HTTP 200 |
+| `SECURITY-002` | `security` | `WECOM_WEBHOOK_URL` 等 webhook 凭据不得提交 | `.gitignore` / `env.example` | gitignore | — | `documented` | `maintenance_candidate` | 与 `SECURITY-001` 同类 |
 
 ## `project-check` 挂载协议
 

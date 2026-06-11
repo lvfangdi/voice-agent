@@ -100,8 +100,17 @@
 
 ## 项目现状
 
-- **阶段**：二次开发初期；原 upstream 为 Pipecat + Twilio 电话 bot，LLM 已切换为 DashScope Qwen Omni
+- **阶段**：二次开发 — 园区访客语音登记 MVP 实施中
+- **业务场景**：园区停车场入口，访客车辆拨打入口电话（MVP 用 WebRTC 代替），Voice Agent 自然对话采集信息后推送保安企微，保安手动放行
+- **MVP 目标**：全链路跑通 + 25s 硬性验收 + 自然门卫式中文对话
 - **本地入口**：`uv run bot.py`（SmallWebRTC 本地调试，http://localhost:7860）
-- **环境配置**：参考 `env.example`，真实密钥写入 `.env`（不提交）
-- **部署**：Pipecat Cloud，见 `pcc-deploy.toml` 与 `Dockerfile`
-- **当前改动面**：LLM 对接层（`qwen_omni_live_service.py`），业务逻辑尚未开始
+- **环境配置**：参考 `env.example`（`DASHSCOPE_API_KEY`、`WECOM_WEBHOOK_URL`），真实密钥写入 `.env`（不提交）
+- **部署**：Pipecat Cloud，见 `pcc-deploy.toml` 与 `Dockerfile`（MVP 验收仅本地 WebRTC）
+- **架构分层**：
+  - LLM 协议层：`qwen_omni_live_service.py`（不改协议）
+  - 编排骨架：`bot.py`
+  - 访客登记业务：`visitor_registration.py`（新增，承载 prompt、字段、企微推送）
+- **Active Master Issue**：[`docs/issues/VA-002-【Master】visitor-registration-mvp.md`](docs/issues/VA-002-【Master】visitor-registration-mvp.md)
+- **ExecPlan**：[`.agents/plans/2026-06-11-visitor-registration-mvp.md`](.agents/plans/2026-06-11-visitor-registration-mvp.md)
+- **Execution Issues**：VA-003（对话流程）→ VA-004（企微推送）→ VA-005（全链路验收）
+- **测试 runbook**：[`docs/test/visitor-registration-mvp-runbook.md`](docs/test/visitor-registration-mvp-runbook.md)
