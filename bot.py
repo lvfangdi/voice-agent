@@ -4,13 +4,13 @@
 # SPDX-License-Identifier: BSD 2-Clause License
 #
 
-"""Gemini Live + Twilio Example.
+"""Qwen Omni Realtime + Twilio Example.
 
-A Pipecat bot that uses Google Gemini Live and Twilio.
+A Pipecat bot that uses DashScope Qwen-Omni Realtime and Twilio.
 You can connect to this bot using either SmallWebRTC or Twilio.
 
 Required AI services:
-- Google Gemini Live (LLM)
+- DashScope Qwen-Omni Realtime (LLM)
 - Twilio (Voice)
 
 Run the bot locally using SmallWebRTC::
@@ -22,7 +22,6 @@ import asyncio
 import os
 
 from dotenv import load_dotenv
-from google.genai.types import ThinkingConfig
 from loguru import logger
 from pipecat.adapters.schemas.function_schema import FunctionSchema
 from pipecat.adapters.schemas.tools_schema import ToolsSchema
@@ -42,8 +41,9 @@ from pipecat.processors.frame_processor import FrameDirection
 from pipecat.processors.frameworks.rtvi import RTVIObserver, RTVIProcessor
 from pipecat.runner.types import RunnerArguments
 from pipecat.runner.utils import create_transport
-from pipecat.services.google.gemini_live.llm import GeminiLiveLLMService, InputParams
 from pipecat.services.llm_service import FunctionCallParams
+
+from qwen_omni_live_service import InputParams, QwenOmniLiveLLMService
 from pipecat.transports.base_transport import BaseTransport, TransportParams
 from pipecat.transports.websocket.fastapi import FastAPIWebsocketParams
 
@@ -127,13 +127,13 @@ Which one's the lie?"
 
 Remember: Present the pre-written statements exactly as shown, keep your commentary brief, and call end_game after round {NUM_ROUNDS}!"""
 
-    llm = GeminiLiveLLMService(
-        api_key=os.getenv("GOOGLE_API_KEY"),
-        model="gemini-2.5-flash-native-audio-preview-09-2025",
-        voice_id="Charon",  # Puck, Charon, Kore, Fenrir, Aoede, Leda, Orus, and Zephyr
+    llm = QwenOmniLiveLLMService(
+        api_key=os.getenv("DASHSCOPE_API_KEY"),
+        model="qwen3.5-omni-plus-realtime",
+        voice="Tina",
         system_instruction=instructions,
         tools=tools,
-        params=InputParams(thinking=ThinkingConfig(thinking_budget=0)),
+        params=InputParams(),
     )
 
     # Register the function with the LLM
