@@ -195,3 +195,30 @@ Call the Twilio number you set up earlier to speak with your bot! 🚀
 - **📚 Learn more**: Check out [Pipecat's docs](https://docs.pipecat.ai/) for advanced features
 - **⚙️ Provide custom data**: [Learn how to provide custom data](https://docs.pipecat.ai/guides/telephony/twilio-websockets#custom-parameters-with-twiml) to your bot at run time
 - **💬 Get help**: Join [Pipecat's Discord](https://discord.gg/pipecat) to connect with the community
+
+---
+
+## Harness 协作入口
+
+本仓库已完成最小 harness 初始化（`issue-provider=repo`，agent 扩展层为 `placeholder`）。
+
+| 主题 | 入口 |
+| --- | --- |
+| 协作总入口 | `AGENTS.md` |
+| 控制面 / Issue Workflow | `docs/harness/` |
+| 仓库内 issue（前缀 `VA`） | `docs/issues/` |
+| 项目级机械约束 | `docs/harness/project-constraints.md` |
+| 计划协议 | `.agents/PLANS.md` |
+| 实现型 plan 示例 | `.agents/plans/EXAMPLE-implementation.md` |
+
+**验证 harness 结构（Windows PowerShell）：**
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\harness\check.ps1
+```
+
+**本地 lint（尚未接入 harness gate）：**
+
+```bash
+uv run ruff check .
+```

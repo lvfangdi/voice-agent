@@ -204,3 +204,23 @@ __marimo__/
 
 # Examples
 credentials.json
+
+# Harness: shared base ignores (from harness base.gitignore)
+.DS_Store
+.idea/
+.vscode/
+logs/
+tmp/
+temp/
+**/output/
+
+# Harness: local auxiliary run surfaces
+.agents/state/*
+!.agents/state/TEMPLATE.md
+.agents/runs/*
+!.agents/runs/TEMPLATE.md
+
+# Harness: Cursor project rules are commit-safe; other Cursor files stay local
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/*.mdc
