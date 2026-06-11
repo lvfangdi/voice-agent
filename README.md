@@ -1,114 +1,113 @@
-# Voice Agent (Pipecat Phone Bot)
+# Voice Agent
 
-基于 Pipecat 的电话语音对话 Agent，当前 fork 自 [daily-co/pcc-gemini-twilio](https://github.com/daily-co/pcc-gemini-twilio)，LLM 已切换为 DashScope Qwen-Omni Realtime，业务逻辑仍在二次开发初期。
+园区停车场**访客车辆语音登记** Agent。基于 [Pipecat](https://docs.pipecat.ai/) 构建，fork 自上游 [daily-co/pcc-gemini-twilio](https://github.com/daily-co/pcc-gemini-twilio)，LLM 已切换为 DashScope **Qwen3-Omni Realtime**（音频进 / 音频出）。
 
-## Try it! 📞
+驾驶员通过电话或 WebRTC 与门卫式 AI 自然对话，采集车牌、来访单位、事由与手机号后，经企微 webhook 通知保安放行。MVP 验收以本地 WebRTC 为主；生产路径为 Twilio + Pipecat Cloud。
 
-Call **1-970-LIVE-API** (1-970-548-3274) to talk to a Gemini Live Pipecat bot over the phone.
+## 项目状态
 
-## Prerequisites
+| 项 | 说明 |
+| --- | --- |
+| 阶段 | 访客登记 MVP 实施中（VA-003 / VA-004 已实现，VA-005 验收中） |
+| 本地调试 | `uv run bot.py` → http://localhost:7860/client |
+| 生产部署 | Pipecat Cloud + Twilio（见 `pcc-deploy.toml`、`Dockerfile`） |
+| Master Issue | [`docs/issues/VA-002-【Master】visitor-registration-mvp.md`](docs/issues/VA-002-【Master】visitor-registration-mvp.md) |
+| 验收 runbook | [`docs/test/visitor-registration-mvp-runbook.md`](docs/test/visitor-registration-mvp-runbook.md) |
 
-### Environment
+## 代码结构
 
-- Python 3.10 or later
-- [uv](https://docs.astral.sh/uv/getting-started/installation/) package manager installed
+业务代码统一放在 `app/` 目录；仓库根目录仅保留 `bot.py` 入口 shim（供 Pipecat Cloud 与本地 `uv run bot.py` 使用）。
 
-### Service API keys
+```
+bot.py                              # 入口 shim → app.bot
+app/
+  visitor_registration.py           # 业务：prompt、字段校验、submit_visitor、企微推送
+  bot.py                            # 编排骨架：Pipeline、transport、function handler
+  qwen_omni_live_service.py         # LLM 协议层：Qwen Omni Realtime WebSocket 适配
+  bot_cascade.py                    # 遗留：ASR + LLM + TTS 级联路径（非主路径）
+  game_content.py                   # 遗留：上游游戏内容（仅 bot_cascade 引用）
+```
 
-You'll need API keys for the following services:
+业务与协议分层：改对话逻辑优先动 `app/visitor_registration.py` 与 `app/bot.py`；改模型协议才动 `app/qwen_omni_live_service.py`。
 
-- [DashScope](https://dashscope.aliyun.com/) Qwen-Omni Realtime（当前主 LLM）
-- [Twilio](https://www.twilio.com/try-twilio) for phone calling
-- （可选）[Gemini](https://aistudio.google.com/) / Google STT & TTS：仅 `bot-cascade.py` 路径需要
+## 环境要求
 
-> 💡 **Tip**: Sign up these services. You'll need them for both local and cloud deployment.
+- Python 3.10+
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) 包管理器
 
-## Setup
+### 服务与密钥
 
-1. Clone this repository
+| 服务 | 用途 | 必需 |
+| --- | --- | --- |
+| [DashScope](https://dashscope.aliyun.com/) | Qwen3-Omni Realtime | 是 |
+| 企微群机器人 Webhook | 访客登记推送给保安 | 是（MVP） |
+| [Twilio](https://www.twilio.com/try-twilio) | 生产电话接入 | 部署时需要 |
+| Google Gemini / STT / TTS | 仅 `app/bot_cascade.py` 遗留路径 | 否 |
 
-   ```bash
-   git clone https://github.com/lvfangdi/voice-agent.git
-   cd voice-agent
-   ```
+## 快速开始
 
-2. Configure your API keys:
+### 1. 克隆与依赖
 
-   Create a `.env` file:
+```bash
+git clone https://github.com/lvfangdi/voice-agent.git
+cd voice-agent
+uv sync
+```
 
-   ```bash
-   cp env.example .env
-   ```
+### 2. 配置环境变量
 
-   Then, add your API keys:
+```bash
+cp env.example .env
+```
 
-   ```ini
-   DASHSCOPE_API_KEY=
-   GOOGLE_API_KEY=
-   GOOGLE_CREDENTIALS_PATH=./credentials.json
-   TWILIO_ACCOUNT_SID=
-   TWILIO_AUTH_TOKEN=
-   ```
+编辑 `.env`，至少填写：
 
-   > If you're running bot-cascade.py, you'll need to add a `credentials.json` file containing your Google Service Account credentials.
+```ini
+DASHSCOPE_API_KEY=          # DashScope API Key
+WECOM_WEBHOOK_URL=          # 企微群机器人 Webhook
+```
 
-3. Set up a virtual environment and install dependencies
+生产部署时还需 Twilio 相关项；若运行遗留级联路径，另需 `GOOGLE_API_KEY` 与 `credentials.json`：
 
-   ```bash
-   uv sync
-   ```
+```bash
+uv run python -m app.bot_cascade
+```
 
-## Run your bot locally
-
-For local development, we'll use Pipecat's P2P WebRTC transport, `SmallWebRTCTransport`. This transports is free to run and allows for faster iteration for development and testing.
-
-Run the bot using:
+### 3. 本地运行
 
 ```bash
 uv run bot.py
 ```
 
-**Open http://localhost:7860 in your browser** and click `Connect` to start talking to your bot.
+浏览器打开 **http://localhost:7860/client**，点击 Connect 开始对话。
 
-> 💡 First run note: The initial startup may take ~20 seconds as Pipecat downloads required models and imports.
+> 首次启动可能需约 20 秒，Pipecat 会下载 VAD 等依赖模型。
 
-## Deploy to Production
+### 4. 本地验收要点
 
-Transform your local bot into a production-ready service. Pipecat Cloud handles scaling, monitoring, and global deployment.
+- 自然门卫式中文，3～4 轮内收齐四项信息
+- 调用 `submit_visitor` 后企微收到登记消息
+- 全链路目标 ≤ 25s（详见 runbook）
 
-### Prerequisites
+## 生产部署
 
-1. [Sign up for Pipecat Cloud](https://pipecat.daily.co/sign-up).
+将本地 bot 发布到 Pipecat Cloud，由 Twilio 将电话媒体流接入云端 Agent。
 
-2. Set up Docker for building your bot image:
+### 前置条件
 
-   - **Install [Docker](https://www.docker.com/)** on your system
-   - **Create a [Docker Hub](https://hub.docker.com/) account**
-   - **Login to Docker Hub:**
-
-     ```bash
-     docker login
-     ```
-
-3. Log in with the `pipecatcloud` CLI (installed with the project) is used to manage your deployment and secrets.
+1. 注册 [Pipecat Cloud](https://pipecat.daily.co/sign-up)
+2. 安装 [Docker](https://www.docker.com/)，注册 [Docker Hub](https://hub.docker.com/) 并 `docker login`
+3. 登录 Pipecat Cloud CLI：
 
    ```bash
    uv run pcc auth login
    ```
 
-   > Tip: Use the CLI with the `pcc` command alias.
+### 配置 Twilio
 
-### Configure Twilio
-
-1. [Purchase a phone number](https://help.twilio.com/articles/223135247-How-to-Search-for-and-Buy-a-Twilio-Phone-Number-from-Console) from Twilio, if you haven't already. Ensure the number has voice capabilities.
-
-2. Retrieve your Pipecat Cloud organization name using the pipecatcloud CLI. This information is required when creating the TwiML configuration.
-
-   ```bash
-   pcc organizations list
-   ```
-
-3. Create a [TwiML Bin](https://help.twilio.com/articles/360043489573-Getting-started-with-TwiML-Bins) with the following configuration:
+1. [购买带语音能力的号码](https://help.twilio.com/articles/223135247-How-to-Search-for-and-Buy-a-Twilio-Phone-Number-from-Console)
+2. 查询组织名：`pcc organizations list`
+3. 创建 [TwiML Bin](https://help.twilio.com/articles/360043489573-Getting-started-with-TwiML-Bins)：
 
    ```xml
    <?xml version="1.0" encoding="UTF-8"?>
@@ -122,93 +121,45 @@ Transform your local bot into a production-ready service. Pipecat Cloud handles 
    </Response>
    ```
 
-   Replace the placeholder values:
+   将 `AGENT_NAME.ORGANIZATION_NAME` 替换为实际 agent 与组织名（例如 `pcc-gemini-twilio.industrious-purple-cat-123`）。
 
-   - `AGENT_NAME` with your deployed bot’s name (e.g., my-first-agent)
-   - `ORGANIZATION_NAME` with your organization name from step 2
+4. 在 Twilio 控制台将该 TwiML Bin 绑定到电话号码（Phone Numbers → Configure → A call comes in → TwiML Bin）
 
-   For example, if your agent is named “pcc-gemini-twilio” and your organization is “industrious-purple-cat-123”, your value would be: pcc-gemini-twilio.industrious-purple-cat-123
+### 配置部署清单
 
-4. Assign the TwiML Bin to your Twilio phone number:
-
-   - Navigate to the "Phone Numbers" section in your Twilio dashboard (Phone Numbers > Manage > Active numbers)
-   - Select your phone number from the list
-   - In the "Configure" tab, under “Voice Configuration” section, find “A call comes in”
-     - Set this dropdown to “TwiML Bin”
-     - Select the "TwiML Bin" you created in step 3
-   - Click Save to apply your changes
-
-### Configure your deployment
-
-The `pcc-deploy.toml` file tells Pipecat Cloud how to run your bot. **Update the `image` field** with your Docker Hub username by editing `pcc-deploy.toml`.
+编辑 `pcc-deploy.toml`，更新 Docker 镜像地址：
 
 ```ini
 agent_name = "pcc-gemini-twilio"
-image = "YOUR_DOCKERHUB_USERNAME/pcc-gemini-twilio:0.1" # 👈 Update this line
+image = "YOUR_DOCKERHUB_USERNAME/pcc-gemini-twilio:0.1"
 secret_set = "pcc-gemini-twilio-secrets"
 
 [scaling]
-	min_agents = 1
+min_agents = 1
 ```
 
-**Understanding the TOML file settings:**
-
-- `agent_name`: Your bot's name in Pipecat Cloud
-- `image`: The Docker image to deploy (format: `username/image:version`)
-- `secret_set`: Where your API keys are stored securely
-- `min_agents`: Number of bot instances to keep ready (1 = instant start)
-
-> 💡 Tip: [Set up `image_credentials`](https://docs.pipecat.ai/deployment/pipecat-cloud/fundamentals/secrets#image-pull-secrets) in your TOML file for authenticated image pulls
-
-### Configure secrets
-
-Upload your API keys to Pipecat Cloud's secure storage:
+### 上传密钥、构建与发布
 
 ```bash
 uv run pcc secrets set pcc-gemini-twilio-secrets --file .env
-```
-
-This creates a secret set called `pcc-gemini-twilio-secrets` (matching your TOML file) and uploads all your API keys from `.env`.
-
-### Build and deploy
-
-Build your Docker image and push to Docker Hub:
-
-```bash
 uv run pcc docker build-push
-```
-
-Deploy to Pipecat Cloud:
-
-```bash
 uv run pcc deploy
 ```
 
-### Call your bot
+部署完成后，拨打已配置的 Twilio 号码即可接入 bot。
 
-Call the Twilio number you set up earlier to speak with your bot! 🚀
+## 协作与质量
 
-## What's Next?
-
-- **🔧 Customize your bot**: Modify `bot.py` to change personality, add functions, or integrate with your data
-- **📚 Learn more**: Check out [Pipecat's docs](https://docs.pipecat.ai/) for advanced features
-- **⚙️ Provide custom data**: [Learn how to provide custom data](https://docs.pipecat.ai/guides/telephony/twilio-websockets#custom-parameters-with-twiml) to your bot at run time
-- **💬 Get help**: Join [Pipecat's Discord](https://discord.gg/pipecat) to connect with the community
-
----
-
-## Harness 协作入口
-
-本仓库已完成最小 harness 初始化（`issue-provider=repo`，agent 扩展层为 `placeholder`）。
+本仓库使用**最小 harness** 管理需求、计划与验收（`issue-provider=repo`，issue 前缀 `VA`）。
 
 | 主题 | 入口 |
 | --- | --- |
-| 协作总入口 | `AGENTS.md` |
-| 控制面 / Issue Workflow | `docs/harness/` |
-| 仓库内 issue（前缀 `VA`） | `docs/issues/` |
-| 项目级机械约束 | `docs/harness/project-constraints.md` |
-| 计划协议 | `.agents/PLANS.md` |
-| 实现型 plan 示例 | `.agents/plans/EXAMPLE-implementation.md` |
+| 协作总入口 | [`AGENTS.md`](AGENTS.md) |
+| 控制面 / Issue Workflow | [`docs/harness/`](docs/harness/) |
+| 仓库内 issue | [`docs/issues/`](docs/issues/) |
+| 项目级机械约束 | [`docs/harness/project-constraints.md`](docs/harness/project-constraints.md) |
+| 计划协议 | [`.agents/PLANS.md`](.agents/PLANS.md) |
+| 当前 ExecPlan | [`.agents/plans/2026-06-11-visitor-registration-mvp.md`](.agents/plans/2026-06-11-visitor-registration-mvp.md) |
 
 **验证 harness 结构（Windows PowerShell）：**
 
@@ -216,8 +167,64 @@ Call the Twilio number you set up earlier to speak with your bot! 🚀
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\harness\check.ps1
 ```
 
-**本地 lint（尚未接入 harness gate）：**
+**本地 lint：**
 
 ```bash
 uv run ruff check .
 ```
+
+## 延伸阅读
+
+- [Pipecat 文档](https://docs.pipecat.ai/)
+- [Twilio WebSocket 自定义参数](https://docs.pipecat.ai/guides/telephony/twilio-websockets#custom-parameters-with-twiml)
+- [Pipecat Discord 社区](https://discord.gg/pipecat)
+
+---
+
+## 技术选型
+
+以下记录本项目的核心取舍，便于后续维护与扩展时保持同一套前提。
+
+### 语音流水线：Pipecat 二次开发
+
+选择基于 **Pipecat** 在上游示例上二次开发，而不是：
+
+| 路径 | 未选原因（简述） |
+| --- | --- |
+| 自研流水线 | 需自行处理 VAD、打断、帧调度、媒体桥接与 telephony 集成，迭代成本高 |
+| [LiveKit Agents](https://docs.livekit.io/agents/) | 生态与部署模型不同，与现有 Pipecat Cloud + Twilio 路径不匹配 |
+| 商业 SaaS（VAPI、Retell 等） | 定制业务逻辑、数据落库与私有化部署空间受限 |
+
+Pipecat 提供可组合的 `Pipeline`、transport 抽象与 Pipecat Cloud 部署路径，适合在电话场景上快速叠加自有业务。
+
+### 电话接入：Twilio
+
+电话层选用 **Twilio Media Streams**，而非自研 SIP Trunk：
+
+- Twilio 负责号码、信令与媒体流，通过 WebSocket 将音频送入 Pipecat
+- 自研 SIP Trunk 需额外承担运营商对接、媒体网关与高可用运维
+
+本地用 **SmallWebRTC** 模拟媒体面；生产经 TwiML Bin 指向 Pipecat Cloud。
+
+### LLM：音频进 / 音频出（Qwen3-Omni）
+
+选用 **端到端实时语音模型**，而非 ASR → LLM → TTS 三段式级联：
+
+| 方案 | 说明 |
+| --- | --- |
+| 级联（ASR + LLM + TTS） | 延迟与打断体验更难统一，组件与故障面更多 |
+| Gemini Live | 能力相近，但在国内环境接入与稳定性成本较高 |
+| **Qwen3-Omni Realtime**（当前） | 与 Gemini Live 同属 speech-to-speech 范式，通过 DashScope 在国内更易落地 |
+
+### 架构：Server-to-Server
+
+媒体与推理链路采用 **服务端到服务端**（Twilio ↔ Pipecat Cloud ↔ DashScope），而不是 Client-to-Server（浏览器直连模型 API）：
+
+- API 密钥与 webhook 留在服务端，不暴露给终端
+- 电话场景天然是 server 侧媒体桥接；WebRTC 本地调试仅作开发用途
+
+### 开发协作：最小 Harness
+
+任务与验收若只散落在单次 prompt 中，实现后容易漏边界、出 bug、频繁返工。因此落地最小 harness，将 Issue、计划、runbook 与 gate 沉淀在 repo：**Issue Tracker 为协作真相，repo 为执行真相**。
+
+上游 fork 曾提供 Gemini Live 公测号码 1-970-548-3274；本仓库以 Qwen3-Omni 与访客登记业务为准，请按本文「快速开始」自行验收。

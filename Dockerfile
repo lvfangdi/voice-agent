@@ -12,11 +12,11 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --locked --no-install-project --no-dev
 
-COPY ./game_content.py game_content.py
+COPY ./app ./app
 
-# Copy the Gemini Live application code
+# Pipecat Cloud expects bot.py at image root
 COPY ./bot.py bot.py
 
 # Alternatively, deploy the cascade bot
 # COPY ./credentials.json credentials.json
-# COPY ./bot-cascade.py bot.py
+# COPY ./app/bot_cascade.py bot.py

@@ -15,9 +15,9 @@ Required AI services:
 - Google TTS (Text-to-Speech)
 - Twilio (Voice)
 
-Run the bot locally using SmallWebRTC::
+Run the bot locally using SmallWebRTC (from repo root)::
 
-    uv run bot-cascade.py
+    uv run python -m app.bot_cascade
 """
 
 import os
@@ -54,7 +54,7 @@ from pipecat.transports.websocket.fastapi import FastAPIWebsocketParams
 from pipecat.turns.user_stop import TurnAnalyzerUserTurnStopStrategy
 from pipecat.turns.user_turn_strategies import UserTurnStrategies
 
-from game_content import GameContent
+from app.game_content import GameContent
 
 load_dotenv(override=True)
 
